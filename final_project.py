@@ -103,33 +103,39 @@ class GUI:
         inToken=Mytokens.pop(0)
 
 
-    def math(self):
+    def math(self, parent_node):
         self.parser_text.insert(END, "\n----parent node math, finding children nodes:\n")
         global inToken
         self.parser_text.insert(END, "Child node (internal): multi\n")
-        self.multi() # left side of +
+        multi_node = self.tree.add_node(parent_node, "Multi")
+        self.multi(multi_node) # left side of +
         if(inToken[1] == "+"):
             self.parser_text.insert(END, "child node (token):"+inToken[1]+"\n")
+            self.tree.add_node(parent_node, inToken[1])
             self.accept_token()
             self.parser_text.insert(END, "child node (internal): multi\n")
-            self.multi() # right side of +
+            multi_node = self.tree.add_node(parent_node, "Multi")
+            self.multi(multi_node) # right side of +
         else:
             self.parser_text.insert(END, "error, you need + after the int in the math\n")
 
 
-    def multi(self):
+    def multi(self, parent_node):
         self.parser_text.insert(END, "\n----parent node multi, finding children nodes:\n")
         global inToken
         if(inToken[0]=="lit_float"): # multi => float
             self.parser_text.insert(END, "child node (internal): float\n")
             self.parser_text.insert(END, "   float has child node (token):"+inToken[1]+"\n")
+            self.tree.add_node(parent_node, inToken[1])
             self.accept_token()
         elif (inToken[0]=="lit_int"): # multi => int * multi
             self.parser_text.insert(END, "child node (internal): int\n")
             self.parser_text.insert(END, "   int has child node (token):"+inToken[1]+"\n")
+            self.tree.add_node(parent_node, inToken[1])
             self.accept_token()
             if(inToken[1]=="*"):
                 self.parser_text.insert(END, "child node (token):"+inToken[1]+"\n")
+                self.tree.add_node(parent_node, inToken[1])
                 self.accept_token()
                 self.parser_text.insert(END, "child node (internal): multi\n")
                 self.multi()
@@ -145,41 +151,46 @@ class GUI:
     math->multi + multi
     multi->int * float|float
     '''
-    def exp(self):
+    def exp(self, parent_node):
         self.parser_text.insert(END, "\n----parent node exp, finding children nodes:\n")
         global inToken
         self.parser_text.insert(END, "child node (token):"+inToken[1]+"\n")
-        self.tree = Tree(inToken[1])
+        self.tree.add_node(parent_node, inToken[1])
         self.accept_token()
         if(inToken[0]=="id"):
             self.parser_text.insert(END, "child node (internal): identifier\n")
             self.parser_text.insert(END, "   identifier has child node (token):"+inToken[1]+"\n")
+            self.tree.add_node(parent_node, inToken[1])
             self.accept_token()
         else:
             self.parser_text.insert(END, "expect identifier as the second element of the expression!\n")
             return  
         if(inToken[1]=="="): 
             self.parser_text.insert(END, "child node (token):"+inToken[1]+"\n")
+            self.tree.add_node(parent_node, inToken[1])
             self.accept_token()
         else:
             self.parser_text.insert(END, "expect = as the third element of the expression!\n")
             return
         self.parser_text.insert(END, "Child node (internal): math\n")
-        self.math() # math->multi + multi
+        math_node = self.tree.add_node(parent_node, "Math")
+        self.math(math_node) # math->multi + multi
 
 
-    def comparison_exp(self):
+    def comparison_exp(self, parent_node):
         self.parser_text.insert(END, "\n----parent node comparison_exp, finding children nodes:\n")
         global inToken
         if(inToken[0]=="id"):
             self.parser_text.insert(END, "child node (internal): identifier\n")
             self.parser_text.insert(END, "   identifier has child node (token):"+inToken[1]+"\n")
+            self.tree.add_node(parent_node, inToken[1])
             self.accept_token()
         else:
             self.parser_text.insert(END, "expect identifier as the third element of the expresison!\n")
             return
         if(inToken[1]==">"):
             self.parser_text.insert(END, "child node (token)"+inToken[1]+"\n")
+            self.tree.add_node(parent_node, inToken[1])
             self.accept_token()
         else:
             self.parser_text.insert(END, "expect > as the fourth element of the expression!\n")
@@ -187,6 +198,7 @@ class GUI:
         if(inToken[0]=="id"):
             self.parser_text.insert(END, "child node (internal): identifier\n")
             self.parser_text.insert(END, "   identifier has child node (token):"+inToken[1]+"\n")
+            self.tree.add_node(parent_node, inToken[1])
             self.accept_token()
         else:
             self.parser_text.insert(END, "expect identifier as the fifth element of the expresison!\n")
@@ -197,22 +209,25 @@ class GUI:
     if_exp->if(comparsion_exp):
     comparison_exp->identifier > identifier
     '''
-    def if_exp(self):
+    def if_exp(self, parent_node):
         self.parser_text.insert(END, "\n----parent node if_exp, finding children nodes:\n")
         global inToken
         self.parser_text.insert(END, "child node (token):"+inToken[1]+"\n")
-        self.tree = Tree(inToken[1])
+        self.tree.add_node(parent_node, inToken[1])
         self.accept_token()
         if(inToken[1]=="("):
             self.parser_text.insert(END, "child node (token):"+inToken[1]+"\n")
+            self.tree.add_node(parent_node, inToken[1])
             self.accept_token()
         else:
             self.parser_text.insert(END, "expect ( as the second element of the expression!\n")
             return
         self.parser_text.insert(END, "Child node (internal): comparison_exp\n")
-        self.comparison_exp() # comparison_exp->identifier > identifier
+        compare_node = self.tree.add_node(parent_node, "Comparison Expression")
+        self.comparison_exp(compare_node) # comparison_exp->identifier > identifier
         if(inToken[1]==")"):
             self.parser_text.insert(END, "child node (token):"+inToken[1]+"\n")
+            self.tree.add_node(parent_node, inToken[1])
             self.accept_token()
         else:
             self.parser_text.insert(END, "expect ) as the sixth element of the expression!\n")
@@ -222,20 +237,22 @@ class GUI:
     BNF:
     print_exp->print("string");
     '''
-    def print_exp(self):
+    def print_exp(self, parent_node):
         self.parser_text.insert(END, "\n----parent node print_exp, finding children nodes:\n")
         global inToken
         self.parser_text.insert(END, "child node (token):"+inToken[1]+"\n")
-        self.tree = Tree(inToken[1])
+        self.tree.add_node(parent_node, inToken[1])
         self.accept_token()
         if(inToken[1]=="("):
             self.parser_text.insert(END, "child node (token):"+inToken[1]+"\n")
+            self.tree.add_node(parent_node, inToken[1])
             self.accept_token()
         else:
             self.parser_text.insert(END, "expect ( as the second element of the expression!\n")
             return
         if(inToken[1]=="\""):
             self.parser_text.insert(END, "child node (token):"+inToken[1]+"\n")
+            self.tree.add_node(parent_node, inToken[1])
             self.accept_token()
         else:
             self.parser_text.insert(END, "expect \" as the third element of the expression!\n")
@@ -243,18 +260,21 @@ class GUI:
         if(inToken[0]=="lit_string"):
             self.parser_text.insert(END, "child node (internal): string literal\n")
             self.parser_text.insert(END, "   identifier has child node (token):"+inToken[1]+"\n")
+            self.tree.add_node(parent_node, inToken[1])
             self.accept_token()
         else:
             self.parser.text.insert(END, "expect string literal as the fourth element of the expression!\n")
             return
         if(inToken[1]=="\""):
             self.parser_text.insert(END, "child node (token):"+inToken[1]+"\n")
+            self.tree.add_node(parent_node, inToken[1])
             self.accept_token()
         else:
             self.parser_text.insert(END, "expect \" as the fifth element of the expression!\n")
             return
         if(inToken[1]==")"):
             self.parser_text.insert(END, "child node (token):"+inToken[1]+"\n")
+            self.tree.add_node(parent_node, inToken[1])
             self.accept_token()
         else:
             self.parser_text.insert(END, "expect ) as the sixth element of the expression!\n")
@@ -274,19 +294,35 @@ class GUI:
         inToken=Mytokens.pop(0)
         match (inToken[1]):
             case "float":
-                self.exp() # exp => id = math
+                self.tree = Tree("Expression")
+                self.exp(self.tree.root) # exp => id = math
                 if(inToken[1]==";"):
+                    self.tree.add_node(self.tree.root, inToken[1])
                     self.parser_text.insert(END, "\nparse tree building success!\n")
+                    self.print_tree()
             case "if":
-                self.if_exp()
+                self.tree = Tree("If Expression")
+                self.if_exp(self.tree.root)
                 if(inToken[1]==":"):
+                    self.tree.add_node(self.tree.root, inToken[1])
                     self.parser_text.insert(END, "\nparse tree building success!\n")
+                    self.print_tree()
             case "print":
-                self.print_exp()
+                self.tree = Tree("Print Expression")
+                self.print_exp(self.tree.root)
                 if(inToken[1]==";"):
+                    self.tree.add_node(self.tree.root, inToken[1])
                     self.parser_text.insert(END, "\nparse tree building success!\n")
+                    self.print_tree()
             case _:
                 self.parser_text.insert(END, "\nError: cannot parse this!\n")
+
+
+def print_tree(self):
+    # level 1 - nodes have gap 1
+    # level 2 - nodes have gap 1/2
+    # level 3 - nodes have gap 1/4
+    pass
 
 
 def tokenizer(line):

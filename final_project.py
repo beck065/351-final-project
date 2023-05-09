@@ -138,7 +138,7 @@ class GUI:
                 self.tree.add_node(parent_node, inToken[1])
                 self.accept_token()
                 self.parser_text.insert(END, "child node (internal): multi\n")
-                self.multi()
+                self.multi(parent_node)
             else:
                 self.parser_text.insert(END, "error, you need * after the int in the multi\n")
         else:
@@ -287,7 +287,6 @@ class GUI:
             message = "\n"
         message += "####parse tree for line " + str(int(self.line_entry.get()) + 1) + "####\n"
         self.parser_text.insert(END, message)
-        self.tree_visualizer.delete('all')
         global Mytokens
         Mytokens = tokens
         global inToken
@@ -299,30 +298,53 @@ class GUI:
                 if(inToken[1]==";"):
                     self.tree.add_node(self.tree.root, inToken[1])
                     self.parser_text.insert(END, "\nparse tree building success!\n")
-                    self.print_tree()
+                    self.draw_tree()
             case "if":
                 self.tree = Tree("If Expression")
                 self.if_exp(self.tree.root)
                 if(inToken[1]==":"):
                     self.tree.add_node(self.tree.root, inToken[1])
                     self.parser_text.insert(END, "\nparse tree building success!\n")
-                    self.print_tree()
+                    self.draw_tree()
             case "print":
                 self.tree = Tree("Print Expression")
                 self.print_exp(self.tree.root)
                 if(inToken[1]==";"):
                     self.tree.add_node(self.tree.root, inToken[1])
                     self.parser_text.insert(END, "\nparse tree building success!\n")
-                    self.print_tree()
+                    self.draw_tree()
             case _:
                 self.parser_text.insert(END, "\nError: cannot parse this!\n")
 
 
-def print_tree(self):
-    # level 1 - nodes have gap 1
-    # level 2 - nodes have gap 1/2
-    # level 3 - nodes have gap 1/4
-    pass
+    def draw_tree(self):
+        # level 1 - nodes have gap 1
+        # level 2 - nodes have gap 1/2
+        # level 3 - nodes have gap 1/4
+        self.tree_visualizer.delete('all')
+
+        offset = 50
+        root_coord = self.width/2-offset, 10, self.width/2+offset, 60
+        self.tree_visualizer.create_rectangle(root_coord)
+        # add text in center of rectangle
+
+        self.draw_children(self.tree.root, root_coord, offset, 1)
+
+
+    def draw_children(self, parent_node, parent_coord, parent_offset, gap_multiplier):
+        children_coords = []
+        children_gaps_num = parent_node.children.__len__() - 1
+        for child in parent_node.children:
+            child_coord = parent_coord[0]+10*gap_multiplier*children_gaps_num-parent_offset, parent_coord[3]+50, parent_coord[0]+10*gap_multiplier*children_gaps_num+parent_offset,parent_coord[3]+100
+            self.tree_visualizer.create_rectangle(child_coord)
+            line_coord = parent_coord[0]+parent_offset, parent_coord[3],child_coord[0]+parent_offset, child_coord[1]
+            self.tree_visualizer.create_rectangle(line_coord)
+            children_coords.append((child, child_coord))
+           # add text in center of rectangle
+
+
+        for child in children_coords:
+            self.draw_children(child[0], child[1], parent_offset, gap_multiplier/2)
 
 
 def tokenizer(line):

@@ -40,8 +40,9 @@ class GUI:
         self.line_button = Button(self.master, text="Next Line", command=self.read_line)
         self.line_button.place(x=260, y=410, width=70)
 
-        self.tree_width = 2400
-        self.tree_visualizer = Canvas(self.master, width=1130, height=300, scrollregion=(0, 0, self.tree_width, 800))
+        self.tree_width = 1400
+        self.tree_height = 400
+        self.tree_visualizer = Canvas(self.master, width=1130, height=300, scrollregion=(0, 0, self.tree_width, self.tree_height))
         self.tree_visualizer.place(x=30, y=450)
         
         
@@ -55,15 +56,7 @@ class GUI:
         self.tree_visualizer.config(yscrollcommand=vbar.set)
         self.tree_visualizer.config(xscrollcommand=hbar.set)
 
-        self.tree_visualizer.config(scrollregion=self.tree_visualizer.bbox("all"))
-        
-        offset = 50
-        root_coord = self.tree_width/2-offset, 10, self.tree_width/2+offset, 60
-        self.tree_visualizer.create_rectangle(root_coord)
-        line_coord = root_coord[0]+offset, root_coord[3], root_coord[0]+offset, root_coord[3]+40
-        self.tree_visualizer.create_line(line_coord)
-        child_coord = line_coord[2]-offset, line_coord[3], line_coord[2]+offset, line_coord[3]+50
-        self.tree_visualizer.create_rectangle(child_coord)
+        #self.tree_visualizer.config(scrollregion=self.tree_visualizer.bbox("all"))
 
         self.tree = None
 
@@ -329,8 +322,9 @@ class GUI:
 
         offset = 50
         root_coord = self.tree_width/2-offset, 10, self.tree_width/2+offset, 60
-        self.tree_visualizer.create_rectangle(root_coord)
-        self.tree_visualizer.create_text((root_coord[0]+offset, root_coord[1]+25), text=self.tree.root.data, font="bold")
+        rect = self.tree_visualizer.create_rectangle(root_coord)
+        text = self.tree_visualizer.create_text((root_coord[0]+offset, root_coord[1]+25), text=self.tree.root.data, font="bold", width=offset*2)
+        # if text is bigger than rectangle make font smaller
 
         self.draw_children(self.tree.root, root_coord, offset, 1)
 
@@ -341,24 +335,26 @@ class GUI:
         for child in parent_node.children:
             x1 = parent_coord[0]+parent_offset
             y1 = parent_coord[3]
-            x2 = parent_coord[0]+450*gap_multiplier*children_num+parent_offset
-            y2 = parent_coord[3]+100
+            x2 = parent_coord[0]+200*gap_multiplier*children_num+parent_offset
+            y2 = parent_coord[3]+50
             line_coord = x1, y1, x2, y2
             self.tree_visualizer.create_line(line_coord)
+
+            child_offset = parent_offset - 10
             
-            x1 = line_coord[2]-parent_offset
+            x1 = line_coord[2]-child_offset
             y1 = line_coord[3]
-            x2 = line_coord[2]+parent_offset
+            x2 = line_coord[2]+child_offset
             y2 = line_coord[3]+50
             child_coord = x1, y1, x2, y2
             self.tree_visualizer.create_rectangle(child_coord)
-            self.tree_visualizer.create_text((line_coord[2], line_coord[3]+25), text=child.data, font="bold")
+            self.tree_visualizer.create_text((line_coord[2], line_coord[3]+25), text=child.data, font="bold", width=child_offset*2)
             
             children_coords.append((child, child_coord))
             children_num += 1
 
         for child in children_coords:
-            self.draw_children(child[0], child[1], parent_offset, gap_multiplier/2)
+            self.draw_children(child[0], child[1], child_offset, gap_multiplier/2)
 
 
 def tokenizer(line):

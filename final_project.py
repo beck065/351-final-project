@@ -4,9 +4,7 @@ import re
 class GUI:
     def __init__(self, root):
         self.master = root
-        self.width=1190
-        self.height=780
-        self.master.config(height=self.height, width=self.width)
+        self.master.config(height=780, width=1190)
         self.master.title("Lexical Analyzer for TinyPie")
 
         self.source_label = Label(self.master, text="Source Code Input:")
@@ -42,16 +40,25 @@ class GUI:
         self.line_button = Button(self.master, text="Next Line", command=self.read_line)
         self.line_button.place(x=260, y=410, width=70)
 
-        self.tree_visualizer = Canvas(self.master, width=1130, height=300, bg="blue", scrollregion=(0, 0, 0, 400)) # color is for testing purposes
+        self.tree_width = 2400
+        self.tree_visualizer = Canvas(self.master, width=1130, height=300, scrollregion=(0, 0, self.tree_width, 800))
         self.tree_visualizer.place(x=30, y=450)
+        
+        
 
-        self.vbar = Scrollbar(self.master, orient=VERTICAL, command=self.tree_visualizer.yview)
-        self.vbar.place(x=1160, y=450, height=300)
+        vbar = Scrollbar(self.master, orient=VERTICAL, command=self.tree_visualizer.yview)
+        vbar.place(x=1160, y=450, height=300)
 
-        self.tree_visualizer.config(yscrollcommand=self.vbar.set, yscrollincrement=0)
+        hbar = Scrollbar(self.master, orient="horizontal", command=self.tree_visualizer.xview)
+        hbar.place(x=30, y=750, width=1130)
+
+        self.tree_visualizer.config(yscrollcommand=vbar.set)
+        self.tree_visualizer.config(xscrollcommand=hbar.set)
+
+        self.tree_visualizer.config(scrollregion=self.tree_visualizer.bbox("all"))
         
         offset = 50
-        root_coord = self.width/2-offset, 10, self.width/2+offset, 60
+        root_coord = self.tree_width/2-offset, 10, self.tree_width/2+offset, 60
         self.tree_visualizer.create_rectangle(root_coord)
         line_coord = root_coord[0]+offset, root_coord[3], root_coord[0]+offset, root_coord[3]+40
         self.tree_visualizer.create_line(line_coord)
@@ -318,30 +325,37 @@ class GUI:
 
 
     def draw_tree(self):
-        # level 1 - nodes have gap 1
-        # level 2 - nodes have gap 1/2
-        # level 3 - nodes have gap 1/4
         self.tree_visualizer.delete('all')
 
         offset = 50
-        root_coord = self.width/2-offset, 10, self.width/2+offset, 60
+        root_coord = self.tree_width/2-offset, 10, self.tree_width/2+offset, 60
         self.tree_visualizer.create_rectangle(root_coord)
-        # add text in center of rectangle
+        self.tree_visualizer.create_text((root_coord[0]+offset, root_coord[1]+25), text=self.tree.root.data, font="bold")
 
         self.draw_children(self.tree.root, root_coord, offset, 1)
 
 
     def draw_children(self, parent_node, parent_coord, parent_offset, gap_multiplier):
         children_coords = []
-        children_gaps_num = parent_node.children.__len__() - 1
+        children_num = ((parent_node.children.__len__()-1)/2)*(-1)
         for child in parent_node.children:
-            child_coord = parent_coord[0]+10*gap_multiplier*children_gaps_num-parent_offset, parent_coord[3]+50, parent_coord[0]+10*gap_multiplier*children_gaps_num+parent_offset,parent_coord[3]+100
+            x1 = parent_coord[0]+parent_offset
+            y1 = parent_coord[3]
+            x2 = parent_coord[0]+450*gap_multiplier*children_num+parent_offset
+            y2 = parent_coord[3]+100
+            line_coord = x1, y1, x2, y2
+            self.tree_visualizer.create_line(line_coord)
+            
+            x1 = line_coord[2]-parent_offset
+            y1 = line_coord[3]
+            x2 = line_coord[2]+parent_offset
+            y2 = line_coord[3]+50
+            child_coord = x1, y1, x2, y2
             self.tree_visualizer.create_rectangle(child_coord)
-            line_coord = parent_coord[0]+parent_offset, parent_coord[3],child_coord[0]+parent_offset, child_coord[1]
-            self.tree_visualizer.create_rectangle(line_coord)
+            self.tree_visualizer.create_text((line_coord[2], line_coord[3]+25), text=child.data, font="bold")
+            
             children_coords.append((child, child_coord))
-           # add text in center of rectangle
-
+            children_num += 1
 
         for child in children_coords:
             self.draw_children(child[0], child[1], parent_offset, gap_multiplier/2)
@@ -448,9 +462,9 @@ def test_string_literals(line):
     if (lit_sep != None):
         # cuts the string literal out of the long string
         line = line.replace(lit_sep.group(), ' ', 1)
-        tokens.append(("sep", "\"")) # append just the open quote
-        tokens.append(("lit_string", lit_sep.group())) # append the string literal (w/ quotes)
-        tokens.append(("sep", "\"")) # append just the close quote
+        tokens.append(("sep", lit_sep.group()[0])) # append just the open quote
+        tokens.append(("lit_string", lit_sep.group()[1:lit_sep.group().__len__()-1])) # append the string literal (w/o quotes)
+        tokens.append(("sep", lit_sep.group()[lit_sep.group().__len__()-1])) # append just the close quote
         return tokens, line
     else:
         # no string literal

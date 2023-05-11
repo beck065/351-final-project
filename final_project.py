@@ -322,9 +322,8 @@ class GUI:
 
         offset = 50
         root_coord = self.tree_width/2-offset, 10, self.tree_width/2+offset, 60
-        rect = self.tree_visualizer.create_rectangle(root_coord)
-        text = self.tree_visualizer.create_text((root_coord[0]+offset, root_coord[1]+25), text=self.tree.root.data, font="bold", width=offset*2)
-        # if text is bigger than rectangle make font smaller
+        self.tree_visualizer.create_rectangle(root_coord)
+        self.tree_visualizer.create_text((root_coord[0]+offset, root_coord[1]+25), text=self.tree.root.data, font="bold", width=offset*2)
 
         self.draw_children(self.tree.root, root_coord, offset, 1)
 

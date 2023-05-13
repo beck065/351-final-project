@@ -44,8 +44,6 @@ class GUI:
         self.tree_height = 400
         self.tree_visualizer = Canvas(self.master, width=1130, height=300, scrollregion=(0, 0, self.tree_width, self.tree_height))
         self.tree_visualizer.place(x=30, y=450)
-        
-        
 
         vbar = Scrollbar(self.master, orient=VERTICAL, command=self.tree_visualizer.yview)
         vbar.place(x=1160, y=450, height=300)
@@ -55,8 +53,6 @@ class GUI:
 
         self.tree_visualizer.config(yscrollcommand=vbar.set)
         self.tree_visualizer.config(xscrollcommand=hbar.set)
-
-        #self.tree_visualizer.config(scrollregion=self.tree_visualizer.bbox("all"))
 
         self.tree = None
 
@@ -318,20 +314,23 @@ class GUI:
 
 
     def draw_tree(self):
-        self.tree_visualizer.delete('all')
+        self.tree_visualizer.delete('all') # clear the previous tree
 
+        # draw the root node
         offset = 50
         root_coord = self.tree_width/2-offset, 10, self.tree_width/2+offset, 60
         self.tree_visualizer.create_rectangle(root_coord)
         self.tree_visualizer.create_text((root_coord[0]+offset, root_coord[1]+25), text=self.tree.root.data, font="bold", width=offset*2)
 
-        self.draw_children(self.tree.root, root_coord, offset, 1)
+        self.__draw_children__(self.tree.root, root_coord, offset, 1) # recursively draw the root node's children
 
 
-    def draw_children(self, parent_node, parent_coord, parent_offset, gap_multiplier):
+    def __draw_children__(self, parent_node, parent_coord, parent_offset, gap_multiplier):
         children_coords = []
-        children_num = ((parent_node.children.__len__()-1)/2)*(-1)
+        children_num = ((parent_node.children.__len__()-1)/2)*(-1) # spaces out the children nodes based on how many children there are
+        # draw children from left to right
         for child in parent_node.children:
+            # draw line from parent node to where the child node will be
             x1 = parent_coord[0]+parent_offset
             y1 = parent_coord[3]
             x2 = parent_coord[0]+200*gap_multiplier*children_num+parent_offset
@@ -339,8 +338,9 @@ class GUI:
             line_coord = x1, y1, x2, y2
             self.tree_visualizer.create_line(line_coord)
 
-            child_offset = parent_offset - 10
+            child_offset = parent_offset - 10 # make child node smaller than parent node
             
+            # base rectangle off line
             x1 = line_coord[2]-child_offset
             y1 = line_coord[3]
             x2 = line_coord[2]+child_offset
@@ -349,11 +349,12 @@ class GUI:
             self.tree_visualizer.create_rectangle(child_coord)
             self.tree_visualizer.create_text((line_coord[2], line_coord[3]+25), text=child.data, font="bold", width=child_offset*2)
             
-            children_coords.append((child, child_coord))
-            children_num += 1
+            children_coords.append((child, child_coord)) # add coords to a list
+            children_num += 1 # move to the next child position
 
-        for child in children_coords:
-            self.draw_children(child[0], child[1], child_offset, gap_multiplier/2)
+        # draw all the children's children
+        for child in children_coords: 
+            self.__draw_children__(child[0], child[1], child_offset, gap_multiplier/2) # gap_multipler: shorten the distance between children nodes for each level
 
 
 def tokenizer(line):
